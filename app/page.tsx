@@ -325,7 +325,7 @@ export default function ClubHomePage() {
       
       <main className="flex-1">
         {/* Hero Section */}
-                <section className="w-full py-20 md:py-32 lg:py-10 overflow-hidden relative">
+        <section className="w-full pt-44 pb-20 md:pt-52 md:pb-32 lg:pt-48 lg:pb-10 overflow-hidden relative">
           {/* LightRays Background - Full Coverage */}
           <div className="absolute inset-0 -z-20 pointer-events-none" style={{ minHeight: '100vh' }}>
             <LightRays

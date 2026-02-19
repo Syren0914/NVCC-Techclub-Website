@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       .from('users')
       .select('*')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
 
     if (userError) {
       return NextResponse.json({

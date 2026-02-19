@@ -24,13 +24,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Check if user is admin by querying the database
-    const { data: userData, error: userError } = await supabase
+    const { data: userData } = await supabase
       .from('users')
       .select('role')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
 
-    if (userError || !userData || userData.role !== 'admin') {
+    if (userData?.role !== 'admin') {
       return NextResponse.json(
         { error: 'Admin access required' },
         { status: 403 }
@@ -103,13 +103,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user is admin by querying the database
-    const { data: userData, error: userError } = await supabase
+    const { data: userData } = await supabase
       .from('users')
       .select('role')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
 
-    if (userError || !userData || userData.role !== 'admin') {
+    if (userData?.role !== 'admin') {
       return NextResponse.json(
         { error: 'Admin access required' },
         { status: 403 }

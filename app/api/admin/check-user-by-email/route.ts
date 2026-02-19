@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
       .from('users')
       .select('*')
       .eq('email', email)
-      .single()
+      .maybeSingle()
 
     // Check if user has any membership applications (get all, not just single)
     const { data: memberships, error: membershipError } = await supabase

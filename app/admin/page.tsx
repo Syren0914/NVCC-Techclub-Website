@@ -2,36 +2,23 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import {
   Users,
   Calendar,
-  Code,
-  BookOpen,
   Settings,
   Plus,
-  Edit,
-  Trash2,
-  Eye,
   Shield,
   Database,
   Activity,
   BarChart3,
-  UserPlus,
+  LogOut,
+  Briefcase,
+  Bell,
   FileText,
-  Globe,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
@@ -40,7 +27,8 @@ import AdminProjectManager from "@/components/admin/admin-project-manager";
 import AdminResourceManager from "@/components/admin/admin-resource-manager";
 import { ProjectMembersManager } from "@/components/admin/project-members-manager";
 import ConferenceStats from "@/components/admin/conference-stats";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ApplicationsContent } from "@/components/admin/applications-content";
+import { AnnouncementsContent } from "@/components/admin/announcements-content";
 
 interface AdminDashboardData {
   totalUsers: number;
@@ -53,25 +41,11 @@ interface AdminDashboardData {
   databaseStatus: any;
 }
 
-interface AdminDashboardPageState {
-  data: AdminDashboardData | null;
-  loading: boolean;
-  error: string | null;
-  activeTab: string;
-  userRole: string | null;
-  isAdminUser: boolean;
-}
-
 export default function AdminDashboardPage() {
   const [data, setData] = useState<AdminDashboardData | null>(null);
-  const [selectedUser, setSelectedUser] = useState<any | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [users, setUsers] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState("overview");
-  const [userRole, setUserRole] = useState<string | null>(null);
   const [isAdminUser, setIsAdminUser] = useState(false);
 
   const router = useRouter();
@@ -92,7 +66,6 @@ export default function AdminDashboardPage() {
         return;
       }
 
-      // Check if user is admin by trying to access admin data
       const response = await fetch("/api/admin/applications", {
         headers: {
           Authorization: `Bearer ${
@@ -112,7 +85,6 @@ export default function AdminDashboardPage() {
       }
 
       setIsAdminUser(true);
-      setUserRole("admin");
     } catch (error) {
       console.error("Error checking admin access:", error);
       router.push("/login");
@@ -155,55 +127,6 @@ export default function AdminDashboardPage() {
       setLoading(false);
     }
   };
-  const loadUsers = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("membership_applications") // Adjust the table name as needed
-        .select("*"); // Select all columns or specific columns like ['id', 'email', 'role']
-      if (error) throw error;
-      setUsers(data || []);
-    } catch (error) {
-      console.error("Error loading users:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load users data.",
-        variant: "destructive",
-      });
-    }
-  };
-  useEffect(() => {
-    loadUsers(); // Load users when the component is mounted
-  }, []);
-  const deleteUser = async (userId: string) => {
-    try {
-      // Deleting the user from the membership_applications table
-      const { data, error } = await supabase
-        .from('membership_applications') // Correct table name
-        .delete()
-        .eq('id', userId); // Ensure 'id' is the correct column to delete by
-  
-      if (error) throw error;
-  
-      // Remove the deleted user from the UI
-      setUsers(users.filter(user => user.id !== userId));
-  
-      toast({
-        title: "Success",
-        description: "User has been deleted from membership applications.",
-        variant: "default",
-      });
-    } catch (error: any) {
-      console.error("Error deleting user:", error.message || error);
-      toast({
-        title: "Error",
-        description: `Failed to delete user: ${error.message || error}`,
-        variant: "destructive",
-      });
-    }
-  };
-  
-  
-  
 
   if (loading) {
     return (
@@ -231,464 +154,227 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-black text-white selection:bg-white/10">
+      {/* Background Depth */}
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-30">
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-900/10 blur-[150px] rounded-full" />
+        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-slate-900/10 blur-[150px] rounded-full" />
+      </div>
+
       {/* Admin Header */}
-      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-        <div className="container flex h-16 items-center justify-between px-4">
+      <header className="border-b border-white/5 bg-black/50 backdrop-blur-xl sticky top-0 z-50">
+        <div className="container mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="size-8 rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white">
-              <Shield className="size-4" />
+            <div className="size-10 bg-white rounded-xl flex items-center justify-center group cursor-pointer transition-transform hover:scale-105">
+              <Shield className="size-5 text-black transition-transform group-hover:rotate-12" />
             </div>
             <div>
-              <span className="font-bold text-lg">Admin Dashboard</span>
-              <p className="text-xs text-muted-foreground">
-                Role: {userRole} • Manage all data
-              </p>
+              <h1 className="text-lg font-bold font-outfit tracking-tight text-white leading-tight">Admin Console</h1>
+              <div className="flex items-center gap-2">
+                <div className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-slate-500">System Priority: Omega</p>
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <Badge variant="destructive" className="text-xs">
-              Admin Mode
-            </Badge>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push("/admin/applications")}
-            >
-              Member Applications
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push("/admin/announcements")}
-            >
-              Annoucements  
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push("/admin/setup-test-data")}
-            >
-              Setup Test Data
-            </Button>
-            <Button variant="outline" size="sm" onClick={loadAdminData}>
-              Refresh Data
+          <div className="flex items-center gap-6">
+            <div className="hidden md:flex flex-col items-end mr-2">
+              <span className="text-xs font-semibold text-white font-outfit tracking-tight">System Administrator</span>
+              <span className="text-[9px] font-medium text-slate-500 uppercase tracking-widest">Authorized Access</span>
+            </div>
+            <Button variant="ghost" className="size-10 p-0 rounded-xl hover:bg-white/5 border border-white/10">
+              <LogOut className="size-4 text-slate-400" />
             </Button>
           </div>
         </div>
       </header>
 
-      <div className="container px-4 py-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-6"
-        >
-          {/* Quick Stats */}
-          {data && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-2xl font-bold">{data.totalUsers}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Total Users
-                      </p>
-                    </div>
-                    <Users className="size-8 text-primary/20" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-2xl font-bold">{data.totalEvents}</p>
-                      <p className="text-sm text-muted-foreground">Events</p>
-                    </div>
-                    <Calendar className="size-8 text-primary/20" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-2xl font-bold">{data.totalProjects}</p>
-                      <p className="text-sm text-muted-foreground">Projects</p>
-                    </div>
-                    <Code className="size-8 text-primary/20" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-2xl font-bold">
-                        {data.totalResources}
-                      </p>
-                      <p className="text-sm text-muted-foreground">Resources</p>
-                    </div>
-                    <BookOpen className="size-8 text-primary/20" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-2xl font-bold">
-                        {data.totalTeamMembers}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Team Members
-                      </p>
-                    </div>
-                    <UserPlus className="size-8 text-primary/20" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("conference")}>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-2xl font-bold">
-                        {data.totalConferenceRegistrations || 0}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Conference
-                      </p>
-                    </div>
-                    <Calendar className="size-8 text-primary/20" />
-                  </div>
-                </CardContent>
-              </Card>
+      <main className="container mx-auto px-6 py-12 relative">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+          {[
+            { label: "Total Users", value: data?.totalUsers ?? 0, icon: Users, color: "text-blue-400" },
+            { label: "Active Events", value: data?.totalEvents ?? 0, icon: Calendar, color: "text-emerald-400" },
+            { label: "Open Projects", value: data?.totalProjects ?? 0, icon: Briefcase, color: "text-purple-400" },
+            { label: "System Uptime", value: "99.9%", icon: Shield, color: "text-amber-400" }
+          ].map((item, i) => (
+            <div key={i} className="group relative bg-[#0a0a0a]/40 backdrop-blur-md border border-white/5 p-8 rounded-[2rem] hover:bg-[#0d0d0d]/60 transition-all duration-500 hover:border-white/10 hover:-translate-y-1">
+              <div className="flex justify-between items-start mb-6">
+                <div className={`p-3 rounded-2xl bg-white/5 border border-white/5 group-hover:border-white/10 transition-colors`}>
+                  <item.icon className={`size-5 ${item.color}`} />
+                </div>
+                <div className="text-[10px] font-bold text-slate-600 uppercase tracking-widest group-hover:text-slate-400 transition-colors">Tactical Data</div>
+              </div>
+              <p className="text-4xl font-bold text-white mb-1 font-outfit tracking-tighter">{item.value}</p>
+              <p className="text-xs font-medium text-slate-500 uppercase tracking-widest leading-relaxed">{item.label}</p>
             </div>
-          )}
+          ))}
+        </div>
 
-          {/* Error Display */}
-          {error && (
-            <Alert className="border-red-200 bg-red-50">
-              <Database className="h-4 w-4 text-red-600" />
-              <AlertDescription className="text-red-800">
-                {error}
-              </AlertDescription>
-            </Alert>
-          )}
+        {/* System Alerts */}
+        {(error || (data?.databaseStatus && data.databaseStatus.status !== "healthy")) && (
+          <div className="space-y-4 mb-8">
+            {error && (
+              <Alert className="bg-red-500/5 border-red-500/10 rounded-[1.5rem] py-4">
+                <Activity className="h-4 w-4 text-red-500" />
+                <AlertDescription className="text-xs font-bold text-red-500 tracking-wide uppercase">
+                  System Alert: {error}
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
+        )}
 
-          {/* Database Status */}
-          {data?.databaseStatus && data.databaseStatus.status !== "healthy" && (
-            <Alert className="border-orange-200 bg-orange-50">
-              <Database className="h-4 w-4 text-orange-600" />
-              <AlertDescription className="text-orange-800">
-                Database connection has issues. Some admin features may not work
-                properly.
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* Admin Tabs */}
-          <Tabs
-            value={activeTab}
-            onValueChange={setActiveTab}
-            className="space-y-4"
-          >
-            <TabsList className="grid w-full grid-cols-8">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="users">Users</TabsTrigger>
-              <TabsTrigger value="events">Events</TabsTrigger>
-              <TabsTrigger value="projects">Projects</TabsTrigger>
-              <TabsTrigger value="members">Members</TabsTrigger>
-              <TabsTrigger value="resources">Resources</TabsTrigger>
-              <TabsTrigger value="conference">Conference</TabsTrigger>
-              <TabsTrigger value="team">Team</TabsTrigger>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-10">
+          <div className="flex justify-center">
+            <TabsList className="bg-[#0a0a0a]/60 border border-white/5 h-12 p-1.5 rounded-[1.25rem] backdrop-blur-xl gap-1 overflow-x-auto max-w-full justify-start md:justify-center">
+              {["overview", "applications", "announcements", "events", "projects", "members", "resources", "conference", "settings"].map((tab) => (
+                <TabsTrigger
+                  key={tab}
+                  value={tab}
+                  className="rounded-xl px-6 text-[10px] font-black uppercase tracking-[0.15em] data-[state=active]:bg-white data-[state=active]:text-black transition-all"
+                >
+                  {tab}
+                </TabsTrigger>
+              ))}
             </TabsList>
+          </div>
 
-            {/* Overview Tab */}
-            <TabsContent value="overview" className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Activity className="size-5" />
-                      Recent Activity
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {data?.recentActivity?.map((activity, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center gap-3 p-3 border rounded-lg"
-                      >
-                        <div className="flex-1">
-                          <p className="text-sm font-medium">
-                            {activity.action}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {activity.time}
-                          </p>
+          <div className="min-h-[500px]">
+            <TabsContent value="overview">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                <div className="lg:col-span-7 space-y-6">
+                  <div className="bg-[#0a0a0a]/40 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] p-10 shadow-2xl">
+                    <div className="flex items-center justify-between mb-8">
+                      <h2 className="text-lg font-bold font-outfit flex items-center gap-3">
+                        <Activity className="size-5 text-blue-500" />
+                        Activity Stream
+                      </h2>
+                      <Badge className="bg-white/5 text-slate-400 border-white/5 font-black text-[10px] uppercase tracking-widest">Live</Badge>
+                    </div>
+                    <div className="space-y-5">
+                      {data?.recentActivity?.map((activity, index) => (
+                        <div
+                          key={index}
+                          className="group flex items-center gap-5 p-5 bg-white/[0.02] border border-white/5 rounded-3xl hover:bg-white/[0.04] transition-all"
+                        >
+                          <div className="w-2 h-2 rounded-full bg-blue-500/50 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
+                          <div className="flex-1">
+                            <p className="text-sm font-bold tracking-tight text-slate-200">
+                              {activity.action}
+                            </p>
+                            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mt-1">
+                              {activity.time}
+                            </p>
+                          </div>
+                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 group-hover:text-blue-400 transition-colors">
+                            {activity.type}
+                          </span>
                         </div>
-                        <Badge variant="outline" className="text-xs">
-                          {activity.type}
-                        </Badge>
-                      </div>
-                    ))}
-                    {(!data?.recentActivity ||
-                      data.recentActivity.length === 0) && (
-                      <p className="text-sm text-muted-foreground text-center py-4">
-                        No recent activity
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
+                      ))}
+                      {(!data?.recentActivity || data.recentActivity.length === 0) && (
+                        <div className="text-center py-20">
+                          <Activity className="size-10 text-white/5 mx-auto mb-4" />
+                          <p className="text-xs font-black text-slate-600 uppercase tracking-widest">Quiet in the console</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <BarChart3 className="size-5" />
-                      Quick Actions
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <Button
-                      className="w-full justify-start"
-                      onClick={() => setActiveTab("events")}
-                    >
-                      <Plus className="size-4 mr-2" />
-                      Add New Event
-                    </Button>
-                    <Button
-                      className="w-full justify-start"
-                      onClick={() => setActiveTab("projects")}
-                    >
-                      <Plus className="size-4 mr-2" />
-                      Add New Project
-                    </Button>
-                    <Button
-                      className="w-full justify-start"
-                      onClick={() => setActiveTab("resources")}
-                    >
-                      <Plus className="size-4 mr-2" />
-                      Add New Resource
-                    </Button>
-                    <Button
-                      className="w-full justify-start"
-                      onClick={() => setActiveTab("members")}
-                    >
-                      <Users className="size-4 mr-2" />
-                      View Project Members
-                    </Button>
-                    <Button
-                      className="w-full justify-start"
-                      onClick={() => setActiveTab("team")}
-                    >
-                      <Plus className="size-4 mr-2" />
-                      Add Team Member
-                    </Button>
-                    <Button
-                      className="w-full justify-start"
-                      onClick={() => router.push("/admin/setup-test-data")}
-                    >
-                      <Database className="size-4 mr-2" />
-                      Setup Test Data
-                    </Button>
-                  </CardContent>
-                </Card>
+                <div className="lg:col-span-5 space-y-6">
+                  <div className="bg-[#0a0a0a]/40 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] p-10 shadow-2xl">
+                    <div className="flex items-center gap-3 mb-8">
+                      <BarChart3 className="size-5 text-purple-500" />
+                      <h2 className="text-lg font-bold font-outfit">Fast Lane</h2>
+                    </div>
+                    <div className="grid grid-cols-1 gap-3">
+                      {[
+                        { label: "Applications", icon: FileText, tab: "applications" },
+                        { label: "Announcements", icon: Bell, tab: "announcements" },
+                        { label: "New Event", icon: Plus, tab: "events" },
+                        { label: "New Project", icon: Plus, tab: "projects" },
+                        { label: "New Resource", icon: Plus, tab: "resources" },
+                        { label: "Database Setup", icon: Database, route: "/admin/setup-test-data" },
+                      ].map((action, i) => (
+                        <Button
+                          key={i}
+                          variant="ghost"
+                          className="w-full h-14 justify-start px-6 bg-white/[0.02] border border-white/5 rounded-2xl hover:bg-white hover:text-black hover:border-white text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300"
+                          onClick={action.tab ? () => setActiveTab(action.tab) : () => router.push(action.route || "#")}
+                        >
+                          <action.icon className="size-4 mr-4 opacity-50" />
+                          {action.label}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
             </TabsContent>
 
-            {/* Users Tab */}
-            <TabsContent value="users" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>User Management</CardTitle>
-                  <CardDescription>
-                    Manage user accounts and permissions
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <TabsContent value="users" className="space-y-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>User Management</CardTitle>
-                        <CardDescription>
-                          Manage user accounts and permissions
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        {users.length > 0 ? (
-                          <div className="space-y-4">
-                            {users.map((user) => (
-                              <div
-                                key={user.id}
-                                className="flex items-center justify-between p-3 border rounded-lg"
-                              >
-                                <div>
-                                  <p className="font-medium">{user.email}</p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {user.role}
-                                  </p>{" "}
-                                  {/* Customize as needed */}
-                                </div>
-                                <div className="flex gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    setSelectedUser(user);
-                                    setIsModalOpen(true);
-                                  }}
-                                >
-                                  <Eye className="size-4 mr-2" />
-                                  View
-                                </Button>
-                                <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                                  <DialogContent className="max-w-lg">
-                                    <DialogHeader>
-                                      <DialogTitle>User Details</DialogTitle>
-                                      <DialogDescription>Basic information about this user</DialogDescription>
-                                    </DialogHeader>
-                                    {selectedUser && (
-                                      <div className="space-y-3">
-                                        
-                                          <div className="grid grid-cols-3 gap-2 text-sm">
-                                            <span className="text-muted-foreground">Full Name</span>
-                                            <span className="col-span-2">{selectedUser.first_name} {selectedUser.last_name}</span>
-                                          </div>
-                                       
-                                        <div className="grid grid-cols-3 gap-2 text-sm">
-                                          <span className="text-muted-foreground">Email</span>
-                                          <span className="col-span-2 break-all">{selectedUser.email || '-'}</span>
-                                        </div>
-                                        <div className="grid grid-cols-3 gap-2 text-sm">
-                                          <span className="text-muted-foreground">Role</span>
-                                          <span className="col-span-2 capitalize">{selectedUser.role || 'member'}</span>
-                                        </div>
-                                        <div className="grid grid-cols-3 gap-2 text-sm">
-                                          <span className="text-muted-foreground">Created</span>
-                                          <span className="col-span-2">{selectedUser.created_at ? new Date(selectedUser.created_at).toLocaleString() : '-'}</span>
-                                        </div>
-                                        {selectedUser.name && (
-                                          <div className="grid grid-cols-3 gap-2 text-sm">
-                                            <span className="text-muted-foreground">Name</span>
-                                            <span className="col-span-2">{selectedUser.name}</span>
-                                          </div>
-                                        )}
-                                        {selectedUser.phone && (
-                                          <div className="grid grid-cols-3 gap-2 text-sm">
-                                            <span className="text-muted-foreground">Phone</span>
-                                            <span className="col-span-2">{selectedUser.phone}</span>
-                                          </div>
-                                        )}
-                                        
-                                          <div className="grid grid-cols-3 gap-2 text-sm">
-                                            <span className="text-muted-foreground">Github</span>
-                                            <span className="col-span-2">{selectedUser.github_username}</span>
-                                          </div>
-                                          <div className="grid grid-cols-3 gap-2 text-sm">
-                                            <span className="text-muted-foreground">LinkedIn</span>
-                                            <span className="col-span-2">{selectedUser.linkedin_url}</span>
-                                          </div>
-                                        
-                                        
-                                          <div className="grid grid-cols-3 gap-2 text-sm">
-                                            <span className="text-muted-foreground">Interests</span>
-                                            <span className="col-span-2">{selectedUser.areas_of_interest}</span>
-                                          </div>
-                                        
-                                        <div className="pt-2 flex justify-end">
-                                          <Button
-                                            variant="outline"
-                                            onClick={() => {
-                                              setIsModalOpen(false)
-                                              setSelectedUser(null)
-                                            }}
-                                          >
-                                            Close
-                                          </Button>
-                                        </div>
-                                      </div>
-                                    )}
-                                  </DialogContent>
-                                </Dialog>
-
-
-                                  <Button variant="outline" size="sm">
-                                    <Edit className="size-4 mr-2" />
-                                    Edit
-                                  </Button>
-                                  <Button variant="destructive" size="sm" onClick={() => deleteUser(user.id)}>
-                                    <Trash2 className="size-4 mr-2" />
-                                    Delete
-                                  </Button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-muted-foreground text-center">
-                            No users available
-                          </p>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-                </CardContent>
-              </Card>
+            <TabsContent value="applications" className="space-y-6">
+              <div className="bg-[#0a0a0a]/40 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] p-1 shadow-2xl overflow-hidden">
+                <ApplicationsContent />
+              </div>
             </TabsContent>
 
-            {/* Events Tab */}
+            <TabsContent value="announcements" className="space-y-6">
+              <div className="bg-[#0a0a0a]/40 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] p-1 shadow-2xl overflow-hidden">
+                <AnnouncementsContent />
+              </div>
+            </TabsContent>
+
             <TabsContent value="events" className="space-y-6">
-              <AdminEventManager />
+              <div className="bg-[#0a0a0a]/40 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] p-1 shadow-2xl overflow-hidden">
+                <AdminEventManager />
+              </div>
             </TabsContent>
 
-            {/* Projects Tab */}
             <TabsContent value="projects" className="space-y-6">
-              <AdminProjectManager />
+              <div className="bg-[#0a0a0a]/40 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] p-1 shadow-2xl overflow-hidden">
+                <AdminProjectManager />
+              </div>
             </TabsContent>
 
-            {/* Project Members Tab */}
             <TabsContent value="members" className="space-y-6">
-              <ProjectMembersManager />
+              <div className="bg-[#0a0a0a]/40 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] p-1 shadow-2xl overflow-hidden">
+                <ProjectMembersManager />
+              </div>
             </TabsContent>
 
-            {/* Resources Tab */}
             <TabsContent value="resources" className="space-y-6">
-              <AdminResourceManager />
+              <div className="bg-[#0a0a0a]/40 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] p-1 shadow-2xl overflow-hidden">
+                <AdminResourceManager />
+              </div>
             </TabsContent>
 
-            {/* Conference Tab */}
             <TabsContent value="conference" className="space-y-6">
-              <ConferenceStats />
+              <div className="bg-[#0a0a0a]/40 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] p-10 shadow-2xl">
+                <ConferenceStats />
+              </div>
             </TabsContent>
 
-            {/* Team Tab */}
-            <TabsContent value="team" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Team Management</CardTitle>
-                  <CardDescription>
-                    Manage team members and roles
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">
-                    Team management features coming soon...
-                  </p>
-                </CardContent>
-              </Card>
+            <TabsContent value="settings" className="mt-0 animate-in fade-in slide-in-from-bottom-4 duration-700">
+              <div className="bg-[#0a0a0a]/60 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] p-16 shadow-2xl flex flex-col items-center text-center max-w-2xl mx-auto">
+                <div className="size-20 bg-white/5 rounded-[2rem] border border-white/10 flex items-center justify-center mb-10">
+                  <Settings className="size-10 text-slate-400 animate-[spin_4s_linear_infinite]" />
+                </div>
+                <h3 className="text-2xl font-bold font-outfit tracking-tight text-white mb-4">System Configuration</h3>
+                <p className="text-[11px] font-medium text-slate-500 uppercase tracking-widest leading-relaxed">Advanced nodal parameters and cluster configuration settings are currently locked behind terminal encryption</p>
+              </div>
             </TabsContent>
-          </Tabs>
-        </motion.div>
-      </div>
+          </div>
+        </Tabs>
+      </main>
+
+      {/* Persistence Bar */}
+      <footer className="border-t border-white/5 bg-black/60 backdrop-blur-xl py-6">
+        <div className="container mx-auto px-6 flex justify-center">
+          <p className="text-[10px] font-black text-slate-700 uppercase tracking-[0.4em]">
+            &copy; {new Date().getFullYear()} TechClub System Architecture
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }

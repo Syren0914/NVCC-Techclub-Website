@@ -1,18 +1,27 @@
 import { NextResponse } from 'next/server'
+import { PROBLEMS } from '@/lib/leetcode-problems'
 
-interface TestCase {
-  input: string
-  expected: string
-  description: string
+const PISTON_API = 'https://emkc.org/api/v2/piston/execute'
+
+const LANGUAGE_CONFIG: Record<string, { language: string; version: string }> = {
+  python: { language: 'python', version: '3.10.0' },
+  javascript: { language: 'javascript', version: '18.15.0' },
+  java: { language: 'java', version: '15.0.2' },
 }
 
-interface ExecutionResult {
-  success: boolean
-  output: string
-  error?: string
-  runtime?: number
-  memory?: number
-  testCases: TestCaseResult[]
+interface PistonResponse {
+  run: {
+    stdout: string
+    stderr: string
+    code: number
+    signal: string | null
+    output: string
+  }
+  compile?: {
+    stdout: string
+    stderr: string
+    code: number
+  }
 }
 
 interface TestCaseResult {
@@ -24,264 +33,269 @@ interface TestCaseResult {
   error?: string
 }
 
-// Simple code execution for demonstration
-// In production, you would use a proper code execution service like Judge0, Docker, or AWS Lambda
-async function executeCode(code: string, language: string, testCases: TestCase[]): Promise<ExecutionResult> {
-  const startTime = Date.now()
-  
-  try {
-    console.log(`🔄 Executing ${language} code...`)
-    
-    // Simulate code execution with realistic delays
-    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000))
-    
-    const executionTime = Date.now() - startTime
-    const memoryUsage = Math.floor(Math.random() * 50) + 20 // Simulated memory usage
-    
-    // Process test cases based on language
-    const testCaseResults: TestCaseResult[] = testCases.map((testCase, index) => {
-      // Simulate different outcomes based on code quality
-      const isCorrect = Math.random() > 0.1 // 90% success rate for demo
-      const testRuntime = Math.floor(Math.random() * 50) + 10
-      
-      if (isCorrect) {
-        return {
-          input: testCase.input,
-          expected: testCase.expected,
-          actual: testCase.expected, // Correct output
-          passed: true,
-          runtime: testRuntime
-        }
-      } else {
-        return {
-          input: testCase.input,
-          expected: testCase.expected,
-          actual: "Wrong Answer", // Simulated wrong answer
-          passed: false,
-          runtime: testRuntime,
-          error: "Incorrect output"
-        }
-      }
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+
+async function runWithPiston(
+  code: string,
+  language: string,
+  stdin: string
+): Promise<{ stdout: string; stderr: string; error?: string }> {
+  const config = LANGUAGE_CONFIG[language]
+  if (!config) {
+    return { stdout: '', stderr: '', error: `Unsupported language: ${language}` }
+  }
+
+  const body = {
+    language: config.language,
+    version: config.version,
+    files: [{ content: code }],
+    stdin,
+    run_timeout: 10000,
+  }
+
+  const MAX_RETRIES = 3
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const response = await fetch(PISTON_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
     })
-    
-    const allPassed = testCaseResults.every(result => result.passed)
-    
-    return {
-      success: allPassed,
-      output: allPassed ? "All test cases passed!" : "Some test cases failed",
-      runtime: executionTime,
-      memory: memoryUsage,
-      testCases: testCaseResults
+
+    if (response.status === 429) {
+      if (attempt < MAX_RETRIES) {
+        await sleep(1500 * (attempt + 1))
+        continue
+      }
+      return { stdout: '', stderr: '', error: 'Rate limited — please wait a moment and try again' }
     }
-    
-  } catch (error) {
-    return {
-      success: false,
-      output: "Execution failed",
-      error: error instanceof Error ? error.message : "Unknown error",
-      testCases: []
+
+    if (!response.ok) {
+      return { stdout: '', stderr: '', error: `Piston API error: ${response.status}` }
     }
+
+    const data: PistonResponse = await response.json()
+
+    if (data.compile && data.compile.code !== 0) {
+      return { stdout: '', stderr: data.compile.stderr || data.compile.stdout, error: 'Compilation error' }
+    }
+
+    if (data.run.code !== 0 && data.run.stderr) {
+      return { stdout: data.run.stdout, stderr: data.run.stderr, error: 'Runtime error' }
+    }
+
+    return { stdout: data.run.stdout, stderr: data.run.stderr }
   }
+
+  return { stdout: '', stderr: '', error: 'Rate limited — please wait a moment and try again' }
 }
 
-// Generate test cases based on problem
-function generateTestCases(problemTitle: string): TestCase[] {
-  const testCases: TestCase[] = []
-  
-  switch (problemTitle.toLowerCase()) {
-    case 'two sum':
-      testCases.push(
-        {
-          input: "nums = [2,7,11,15], target = 9",
-          expected: "[0,1]",
-          description: "Basic two sum case"
-        },
-        {
-          input: "nums = [3,2,4], target = 6",
-          expected: "[1,2]",
-          description: "Target in middle"
-        },
-        {
-          input: "nums = [3,3], target = 6",
-          expected: "[0,1]",
-          description: "Same numbers"
-        }
-      )
-      break
-      
-    case 'add two numbers':
-      testCases.push(
-        {
-          input: "l1 = [2,4,3], l2 = [5,6,4]",
-          expected: "[7,0,8]",
-          description: "Basic addition"
-        },
-        {
-          input: "l1 = [0], l2 = [0]",
-          expected: "[0]",
-          description: "Zero case"
-        }
-      )
-      break
-      
-    default:
-      // Generic test cases for unknown problems
-      testCases.push(
-        {
-          input: "test input",
-          expected: "expected output",
-          description: "Sample test case"
-        }
-      )
-  }
-  
-  return testCases
+// Build a driver wrapper for LeetCode-style class solutions.
+// This wraps the user's Solution class with stdin parsing and stdout printing
+// so Piston can run it with example inputs.
+function buildPythonDriver(userCode: string, metaData: any): string {
+  if (!metaData?.name) return userCode // Can't generate driver without method name
+
+  const methodName = metaData.name
+  const params = metaData.params || []
+
+  // Build stdin parsing lines
+  const parseLines = params.map((p: any, i: number) => {
+    const varName = p.name
+    return `    ${varName} = json.loads(input())`
+  }).join('\n')
+
+  const argList = params.map((p: any) => p.name).join(', ')
+
+  return `import json, sys
+${userCode}
+
+if __name__ == "__main__":
+    sol = Solution()
+${parseLines}
+    result = sol.${methodName}(${argList})
+    print(json.dumps(result))
+`
 }
 
-// Validate code syntax (basic validation)
-function validateCode(code: string, language: string): { valid: boolean; error?: string } {
-  if (!code || code.trim().length === 0) {
-    return { valid: false, error: "Code cannot be empty" }
+function buildJavaScriptDriver(userCode: string, metaData: any): string {
+  if (!metaData?.name) return userCode
+
+  const methodName = metaData.name
+  const params = metaData.params || []
+
+  const parseLines = params.map((p: any, i: number) => {
+    return `  const ${p.name} = JSON.parse(lines[${i}]);`
+  }).join('\n')
+
+  const argList = params.map((p: any) => p.name).join(', ')
+
+  return `${userCode}
+
+const readline = require('readline');
+const rl = readline.createInterface({ input: process.stdin });
+const lines = [];
+rl.on('line', l => lines.push(l.trim()));
+rl.on('close', () => {
+${parseLines}
+  // Try class-based or function-based
+  let result;
+  if (typeof ${methodName} === 'function') {
+    result = ${methodName}(${argList});
   }
-  
-  switch (language) {
-    case 'python':
-      // Basic Python syntax check
-      if (!code.includes('class Solution:') && !code.includes('def ')) {
-        return { valid: false, error: "Python code should contain a Solution class or function" }
-      }
-      break
-      
-    case 'javascript':
-      // Basic JavaScript syntax check
-      if (!code.includes('function') && !code.includes('=>') && !code.includes('var ') && !code.includes('let ') && !code.includes('const ')) {
-        return { valid: false, error: "JavaScript code should contain a function declaration" }
-      }
-      break
-      
-    case 'java':
-      // Basic Java syntax check
-      if (!code.includes('class Solution') && !code.includes('public ')) {
-        return { valid: false, error: "Java code should contain a Solution class" }
-      }
-      break
+  console.log(JSON.stringify(result));
+});
+`
+}
+
+// Normalize output for comparison - handles different JSON formats
+function normalizeOutput(output: string): string {
+  const trimmed = output.trim()
+  try {
+    // Try parsing as JSON and re-serializing for consistent formatting
+    const parsed = JSON.parse(trimmed)
+    return JSON.stringify(parsed)
+  } catch {
+    return trimmed
   }
-  
-  return { valid: true }
 }
 
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { code, language, problemTitle } = body
-    
-    if (!code || !language) {
-      return NextResponse.json({
-        success: false,
-        error: 'Code and language are required'
-      })
-    }
-    
-    console.log(`🔄 Code execution request:`, {
+    const {
+      code,
       language,
-      problemTitle,
-      codeLength: code.length
-    })
-    
-    // Validate code syntax
-    const validation = validateCode(code, language)
-    if (!validation.valid) {
-      return NextResponse.json({
-        success: false,
-        error: validation.error
+      problemId,
+      // For LeetCode API problems
+      exampleTestcases,
+      expectedOutputs,
+      metaData,
+      source,
+    } = body
+
+    if (!code || !language) {
+      return NextResponse.json({ success: false, error: 'Code and language are required' })
+    }
+
+    const startTime = Date.now()
+    const results: TestCaseResult[] = []
+
+    // Check if this is a curated problem from our static bank (skip if source is leetcode)
+    const curatedProblem = source !== 'leetcode' ? PROBLEMS.find((p) => p.id === problemId) : null
+
+    if (curatedProblem) {
+      // ===== CURATED PROBLEM: use our stdin/stdout test cases =====
+      for (let idx = 0; idx < curatedProblem.testCases.length; idx++) {
+        if (idx > 0) await sleep(500)
+        const tc = curatedProblem.testCases[idx]
+        const tcStart = Date.now()
+        const { stdout, stderr, error } = await runWithPiston(code, language, tc.stdin)
+        const tcRuntime = Date.now() - tcStart
+
+        const actual = stdout.trim()
+        const expected = tc.expectedStdout.trim()
+        const passed = actual === expected
+
+        results.push({
+          input: tc.stdin.replace(/\n/g, ', '),
+          expected,
+          actual: error ? `[${error}] ${stderr.split('\n')[0]}` : actual,
+          passed: !error && passed,
+          runtime: tcRuntime,
+          error: error ? stderr.split('\n').slice(0, 3).join('\n') : undefined,
+        })
+      }
+    } else if (
+      exampleTestcases &&
+      expectedOutputs &&
+      exampleTestcases.length > 0 &&
+      expectedOutputs.length > 0
+    ) {
+      // ===== LEETCODE API PROBLEM: wrap user code with driver =====
+      let driverCode = code
+
+      // Only wrap if the code looks like a class-based solution
+      const isClassBased = code.includes('class Solution')
+
+      if (isClassBased && metaData) {
+        if (language === 'python') {
+          driverCode = buildPythonDriver(code, metaData)
+        } else if (language === 'javascript') {
+          driverCode = buildJavaScriptDriver(code, metaData)
+        }
+        // Java wrapping is complex - skip for now, run as-is
+      }
+
+      // Build test cases from the example inputs/outputs
+      // exampleTestcases is the raw string from LeetCode, split by param count
+      const paramCount = metaData?.params?.length || 1
+      const allInputLines = (exampleTestcases as string[])
+
+      // Group input lines by param count to form individual test cases
+      const testInputs: string[] = []
+      for (let i = 0; i < allInputLines.length; i += paramCount) {
+        const inputGroup = allInputLines.slice(i, i + paramCount).join('\n')
+        testInputs.push(inputGroup)
+      }
+
+      const outputs = expectedOutputs as string[]
+      const testCount = Math.min(testInputs.length, outputs.length)
+
+      for (let i = 0; i < testCount; i++) {
+        if (i > 0) await sleep(500)
+        const tcStart = Date.now()
+        const { stdout, stderr, error } = await runWithPiston(driverCode, language, testInputs[i])
+        const tcRuntime = Date.now() - tcStart
+
+        const actual = normalizeOutput(stdout)
+        const expected = normalizeOutput(outputs[i])
+        const passed = actual === expected
+
+        results.push({
+          input: testInputs[i].replace(/\n/g, ', '),
+          expected: outputs[i].trim(),
+          actual: error ? `[${error}] ${stderr.split('\n')[0]}` : stdout.trim(),
+          passed: !error && passed,
+          runtime: tcRuntime,
+          error: error ? stderr.split('\n').slice(0, 3).join('\n') : undefined,
+        })
+      }
+    } else {
+      // ===== UNKNOWN PROBLEM: just run the code and show output =====
+      const tcStart = Date.now()
+      const { stdout, stderr, error } = await runWithPiston(code, language, '')
+      const tcRuntime = Date.now() - tcStart
+
+      results.push({
+        input: '(no input)',
+        expected: '(free run - no expected output)',
+        actual: error ? `[${error}] ${stderr.split('\n')[0]}` : stdout.trim() || '(no output)',
+        passed: !error && stdout.trim().length > 0,
+        runtime: tcRuntime,
+        error: error ? stderr.split('\n').slice(0, 3).join('\n') : undefined,
       })
     }
-    
-    // Generate test cases for the problem
-    const testCases = generateTestCases(problemTitle || 'Two Sum')
-    
-    // Execute the code
-    const result = await executeCode(code, language, testCases)
-    
-    console.log('✅ Code execution completed:', {
-      success: result.success,
-      testCasesPassed: result.testCases.filter(t => t.passed).length,
-      totalTestCases: result.testCases.length,
-      runtime: result.runtime
-    })
-    
+
+    const totalRuntime = Date.now() - startTime
+    const allPassed = results.every((r) => r.passed)
+
     return NextResponse.json({
       success: true,
-      data: result
+      data: {
+        success: allPassed,
+        output: allPassed
+          ? `All ${results.length} test cases passed!`
+          : `${results.filter((r) => r.passed).length}/${results.length} test cases passed`,
+        runtime: totalRuntime,
+        testCases: results,
+      },
     })
-    
   } catch (error) {
-    console.error('❌ Code execution error:', error)
+    console.error('Code execution error:', error)
     return NextResponse.json({
       success: false,
       error: 'Code execution failed',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: error instanceof Error ? error.message : 'Unknown error',
     })
   }
 }
-
-// For production, you would integrate with a real code execution service:
-
-/*
-// Example with Judge0 API
-async function executeWithJudge0(code: string, language: string, testCases: TestCase[]) {
-  const JUDGE0_API_URL = 'https://judge0-ce.p.rapidapi.com'
-  
-  // Create submission
-  const submission = await fetch(`${JUDGE0_API_URL}/submissions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-RapidAPI-Key': process.env.RAPIDAPI_KEY,
-      'X-RapidAPI-Host': 'judge0-ce.p.rapidapi.com'
-    },
-    body: JSON.stringify({
-      source_code: code,
-      language_id: getLanguageId(language),
-      stdin: testCases[0].input
-    })
-  })
-  
-  // Get results
-  const result = await fetch(`${JUDGE0_API_URL}/submissions/${submission.id}`)
-  
-  return result.json()
-}
-
-// Example with Docker
-async function executeWithDocker(code: string, language: string) {
-  const { exec } = require('child_process')
-  
-  return new Promise((resolve, reject) => {
-    const containerName = `leetcode-${Date.now()}`
-    const command = `docker run --rm --name ${containerName} -v /tmp/code:/code ${language}-runner /code/solution`
-    
-    exec(command, (error, stdout, stderr) => {
-      if (error) {
-        reject(error)
-      } else {
-        resolve({ output: stdout, error: stderr })
-      }
-    })
-  })
-}
-
-// Example with AWS Lambda
-async function executeWithLambda(code: string, language: string) {
-  const AWS = require('aws-sdk')
-  const lambda = new AWS.Lambda()
-  
-  const params = {
-    FunctionName: 'leetcode-executor',
-    Payload: JSON.stringify({ code, language })
-  }
-  
-  const result = await lambda.invoke(params).promise()
-  return JSON.parse(result.Payload)
-}
-*/ 

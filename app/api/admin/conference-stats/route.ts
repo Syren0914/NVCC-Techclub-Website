@@ -4,20 +4,14 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin'
 
 async function isAdmin(user: any): Promise<boolean> {
   try {
-    const { data: userData, error: userError } = await supabase
+    const { data: userData } = await supabase
       .from('users')
       .select('role')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
 
-    if (userError || !userData) {
-      console.error('Error checking admin status:', userError)
-      return false
-    }
-
-    return userData.role === 'admin'
+    return userData?.role === 'admin'
   } catch (error) {
-    console.error('Error in isAdmin check:', error)
     return false
   }
 }

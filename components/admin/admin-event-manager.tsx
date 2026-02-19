@@ -8,12 +8,38 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Loader2, Plus, Edit, Trash2, Calendar, MapPin, Users, Eye } from "lucide-react"
+import { 
+  Loader2 as LucideLoader2, 
+  Plus as LucidePlus, 
+  Edit as LucideEdit, 
+  Trash2 as LucideTrash2, 
+  Calendar as LucideCalendar, 
+  MapPin as LucideMapPin, 
+  Users as LucideUsers, 
+  Eye as LucideEye, 
+  Shield as LucideShield, 
+  Clock as LucideClock, 
+  AlertTriangle as LucideAlertTriangle 
+} from "lucide-react"
+
+const Loader2 = LucideLoader2 as any
+const Plus = LucidePlus as any
+const Edit = LucideEdit as any
+const Trash2 = LucideTrash2 as any
+const Calendar = LucideCalendar as any
+const MapPin = LucideMapPin as any
+const Users = LucideUsers as any
+const Eye = LucideEye as any
+const Shield = LucideShield as any
+const Clock = LucideClock as any
+const AlertTriangle = LucideAlertTriangle as any
 import { supabase } from "@/lib/supabase"
 import { useToast } from "@/hooks/use-toast"
 import ImageUpload from "@/components/image-upload"
+import { motion, AnimatePresence } from "framer-motion"
 
 interface Event {
   id: string
@@ -159,13 +185,13 @@ export default function AdminEventManager() {
   const getEventTypeColor = (type: string) => {
     switch (type) {
       case 'workshop':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
+        return 'bg-blue-500/10 text-blue-400 border-blue-500/20'
       case 'hackathon':
-        return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300'
+        return 'bg-purple-500/10 text-purple-400 border-purple-500/20'
       case 'meeting':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+        return 'bg-green-500/10 text-green-400 border-green-500/20'
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300'
+        return 'bg-slate-500/10 text-slate-400 border-slate-500/20'
     }
   }
 
@@ -178,205 +204,268 @@ export default function AdminEventManager() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Event Management</h2>
-          <p className="text-muted-foreground">Create and manage club events</p>
-        </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setIsDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Event
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>
-                {isEditing ? "Edit Event" : "Add New Event"}
-              </DialogTitle>
-              <DialogDescription>
-                {isEditing ? "Update event details" : "Create a new event for the club"}
-              </DialogDescription>
-            </DialogHeader>
-            
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Title</label>
-                  <Input
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    placeholder="Event title"
-                    required
+    <div className="flex flex-col h-full bg-[#050505]/40 backdrop-blur-3xl min-h-[600px]">
+      <div className="p-8 border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex items-center gap-4">
+            <div className="size-12 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-center text-white shadow-2xl">
+              <Calendar className="size-6" />
+            </div>
+            <div>
+              <h2 className="text-3xl font-black font-outfit tracking-tight text-white">Engagements</h2>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Deployment Manifest & Event Logistics</p>
+            </div>
+          </div>
+          
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="h-12 bg-white text-black font-black text-[10px] uppercase tracking-widest rounded-xl px-8 hover:bg-slate-200 transition-all shadow-xl shadow-white/5 group">
+                <Plus className="size-4 mr-2 group-hover:rotate-90 transition-transform" />
+                Initialize Entry
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl bg-black/95 backdrop-blur-3xl border border-white/5 p-10 rounded-[2.5rem] shadow-3xl">
+              <DialogHeader className="mb-10">
+                <DialogTitle className="text-2xl font-bold font-outfit text-white">
+                  {isEditing ? "Modify Deployment" : "Initialize Entry"}
+                </DialogTitle>
+                <DialogDescription className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                  {isEditing ? "ADJUSTING EXISTING PARAMETERS" : "DEFINING NEW ENGAGEMENT PARAMETERS"}
+                </DialogDescription>
+              </DialogHeader>
+              
+              <form onSubmit={handleSubmit} className="space-y-8">
+                <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-6 space-y-6">
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Designation</Label>
+                      <Input
+                        className="bg-white/[0.03] border-white/10 rounded-xl h-12 text-xs font-bold focus:border-white/20 transition-all placeholder:text-slate-700"
+                        value={formData.title}
+                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                        placeholder="Event identifier"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Classification</Label>
+                      <Select
+                        value={formData.type}
+                        onValueChange={(value: string) => setFormData({ ...formData, type: value })}
+                      >
+                        <SelectTrigger className="bg-white/[0.03] border-white/10 rounded-xl h-12 text-xs font-bold focus:ring-0 focus:border-white/20 transition-all">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-black/90 backdrop-blur-3xl border-white/10 rounded-xl">
+                          <SelectItem value="general">General</SelectItem>
+                          <SelectItem value="workshop">Workshop</SelectItem>
+                          <SelectItem value="hackathon">Hackathon</SelectItem>
+                          <SelectItem value="meeting">Meeting</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Detailed Analytics</Label>
+                    <Textarea
+                      className="bg-white/[0.03] border-white/10 rounded-2xl min-h-[120px] text-xs font-bold focus:border-white/20 transition-all p-4 placeholder:text-slate-700"
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      placeholder="Full engagement specifications"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-6 space-y-6">
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Timestamp</Label>
+                      <Input
+                        type="datetime-local"
+                        className="bg-white/[0.03] border-white/10 rounded-xl h-12 text-xs font-bold focus:border-white/20 transition-all invert brightness-200"
+                        value={formData.date}
+                        onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Coordinates</Label>
+                      <Input
+                        className="bg-white/[0.03] border-white/10 rounded-xl h-12 text-xs font-bold focus:border-white/20 transition-all placeholder:text-slate-700"
+                        value={formData.location}
+                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                        placeholder="Physical or digital locale"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Capacity Limit</Label>
+                      <Input
+                        type="number"
+                        className="bg-white/[0.03] border-white/10 rounded-xl h-12 text-xs font-bold focus:border-white/20 transition-all placeholder:text-slate-700"
+                        value={formData.max_participants}
+                        onChange={(e) => setFormData({ ...formData, max_participants: e.target.value })}
+                        placeholder="Unlimited if null"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-6">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-4 block">Visual Artifact</Label>
+                  <ImageUpload
+                    value={formData.image_url}
+                    onChange={(url) => setFormData({ ...formData, image_url: url })}
+                    label=""
+                    placeholder="Source URL or Direct Upload"
                   />
                 </div>
-                <div>
-                  <label className="text-sm font-medium">Type</label>
-                  <Select
-                    value={formData.type}
-                    onValueChange={(value) => setFormData({ ...formData, type: value })}
+                
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    className="text-[10px] font-black uppercase tracking-widest h-14 px-8 text-slate-500 hover:text-white hover:bg-white/5 rounded-2xl"
+                    onClick={handleCloseDialog}
                   >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="general">General</SelectItem>
-                      <SelectItem value="workshop">Workshop</SelectItem>
-                      <SelectItem value="hackathon">Hackathon</SelectItem>
-                      <SelectItem value="meeting">Meeting</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    Terminate
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    disabled={submitting}
+                    className="bg-white text-black font-black text-xs uppercase tracking-[0.2em] rounded-2xl h-14 px-10 hover:bg-slate-200 transition-all shadow-xl shadow-white/5"
+                  >
+                    {submitting ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <>
+                        <Shield className="h-4 w-4 mr-2" />
+                        {isEditing ? "Execute Update" : "Confirm Entry"}
+                      </>
+                    )}
+                  </Button>
                 </div>
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium">Description</label>
-                <Textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Event description"
-                  required
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Date</label>
-                  <Input
-                    type="datetime-local"
-                    value={formData.date}
-                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Location</label>
-                  <Input
-                    value={formData.location}
-                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                    placeholder="Event location"
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium">Max Participants</label>
-                <Input
-                  type="number"
-                  value={formData.max_participants}
-                  onChange={(e) => setFormData({ ...formData, max_participants: e.target.value })}
-                  placeholder="Leave empty for unlimited"
-                />
-              </div>
-              
-              <ImageUpload
-                value={formData.image_url}
-                onChange={(url) => setFormData({ ...formData, image_url: url })}
-                label="Event Image"
-                placeholder="Enter image URL or upload a file"
-              />
-              
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={handleCloseDialog}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={submitting}>
-                  {submitting ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : (
-                    <Plus className="h-4 w-4 mr-2" />
-                  )}
-                  {isEditing ? "Update Event" : "Create Event"}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
-      {error && (
-        <Alert>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Events ({events.length})</CardTitle>
-          <CardDescription>All club events</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {events.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No events found
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {events.map((event) => (
-                  <TableRow key={event.id}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{event.title}</div>
-                        <div className="text-sm text-muted-foreground line-clamp-2">
-                          {event.description}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getEventTypeColor(event.type)}>
-                        {event.type}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {new Date(event.date).toLocaleDateString()}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {event.location && (
-                        <div className="flex items-center gap-1">
-                          <MapPin className="h-3 w-3" />
-                          {event.location}
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleEdit(event)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+      <div className="flex-1 overflow-auto custom-scrollbar p-8">
+        <AnimatePresence mode="wait">
+          {error && (
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-8 p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-center gap-3 text-rose-500 text-xs font-bold"
+            >
+              <AlertTriangle className="size-4 shrink-0" />
+              CRITICAL ERROR: {error}
+            </motion.div>
           )}
-        </CardContent>
-      </Card>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {events.map((event, index) => (
+              <motion.div
+                key={event.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className="group relative bg-[#0a0a0a]/40 backdrop-blur-xl border border-white/5 rounded-[2rem] overflow-hidden flex flex-col hover:bg-white/[0.04] hover:border-white/10 transition-all duration-500"
+              >
+                {event.image_url && (
+                  <div className="relative h-48 overflow-hidden">
+                    <img 
+                      src={event.image_url} 
+                      alt={event.title}
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-transparent opacity-80" />
+                  </div>
+                )}
+                
+                <div className="p-6 flex-1 flex flex-col">
+                  <div className="flex items-center justify-between mb-4">
+                    <Badge className={`rounded-lg px-2 py-0.5 text-[9px] font-black uppercase tracking-widest ${getEventTypeColor(event.type)}`}>
+                      {event.type}
+                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <div className="size-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                      <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500/80">Active</span>
+                    </div>
+                  </div>
+
+                  <h3 className="text-xl font-bold font-outfit text-white mb-2 group-hover:text-white transition-colors">
+                    {event.title}
+                  </h3>
+                  
+                  <p className="text-xs text-slate-500 font-medium line-clamp-2 mb-6 leading-relaxed">
+                    {event.description}
+                  </p>
+
+                  <div className="mt-auto space-y-3">
+                    <div className="flex items-center gap-3 text-slate-400">
+                      <Calendar className="size-3.5 text-slate-600" />
+                      <span className="text-[10px] font-bold uppercase tracking-widest">
+                        {new Date(event.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 text-slate-400">
+                      <Clock className="size-3.5 text-slate-600" />
+                      <span className="text-[10px] font-bold uppercase tracking-widest">
+                        {new Date(event.date).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                    {event.location && (
+                      <div className="flex items-center gap-3 text-slate-400">
+                        <MapPin className="size-3.5 text-slate-600" />
+                        <span className="text-[10px] font-bold uppercase tracking-widest truncate">{event.location}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-3 text-slate-400">
+                      <Users className="size-3.5 text-slate-600" />
+                      <span className="text-[10px] font-bold uppercase tracking-widest">
+                        {event.max_participants ? `0 / ${event.max_participants} Nodes` : 'Open Matrix'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      className="size-9 rounded-xl bg-black/60 backdrop-blur-md border border-white/10 hover:bg-white hover:text-black transition-all"
+                      onClick={() => handleEdit(event)}
+                    >
+                      <Edit className="size-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      className="size-9 rounded-xl bg-rose-500/20 backdrop-blur-md border border-rose-500/30 text-rose-500 hover:bg-rose-500 hover:text-white transition-all"
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+
+            {events.length === 0 && (
+              <div className="col-span-full py-32 text-center bg-white/[0.01] border border-dashed border-white/5 rounded-[3rem]">
+                <Calendar className="size-20 text-slate-900 mx-auto mb-6" />
+                <h4 className="text-xl font-bold font-outfit text-white/20 mb-2 uppercase tracking-[0.2em]">Matrix Empty</h4>
+                <p className="text-[10px] font-black text-slate-700 uppercase tracking-widest">Awaiting engagement initialization</p>
+              </div>
+            )}
+          </div>
+        </AnimatePresence>
+      </div>
     </div>
   )
-} 
+}
+ 

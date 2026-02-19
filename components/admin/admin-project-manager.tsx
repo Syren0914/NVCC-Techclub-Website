@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Loader2, Plus, Edit, Trash2, Github, ExternalLink, Eye, Code, Users, CheckCircle, XCircle, Clock } from "lucide-react"
+import { Loader2, Plus, Edit, Trash2, Github, ExternalLink, Eye, Code, Users, CheckCircle, XCircle, Clock, Shield } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { useToast } from "@/hooks/use-toast"
 import ImageUpload from "@/components/image-upload"
@@ -312,125 +312,131 @@ export default function AdminProjectManager() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-12 p-8">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Project Management</h2>
-          <p className="text-muted-foreground">Create and manage club projects</p>
+          <h2 className="text-xl font-bold font-outfit tracking-tight text-white mb-1">Ventures Portfolio</h2>
+          <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-500">Club Research & Development Initiatives</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => setIsDialogOpen(true)}>
+            <Button onClick={() => setIsDialogOpen(true)} className="bg-white text-black font-bold text-[11px] uppercase tracking-[0.1em] rounded-xl h-11 px-8 hover:bg-slate-200 transition-all">
               <Plus className="h-4 w-4 mr-2" />
-              Add Project
+              Initialize Venture
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>
-                {isEditing ? "Edit Project" : "Add New Project"}
+          <DialogContent className="max-w-2xl bg-[#0d0d0d] border-white/10 p-12 rounded-[2.5rem] shadow-3xl">
+            <DialogHeader className="mb-10">
+              <DialogTitle className="text-2xl font-bold font-outfit tracking-tight text-white uppercase tracking-[0.1em]">
+                {isEditing ? "Modify Venture" : "Initialize Venture"}
               </DialogTitle>
-              <DialogDescription>
-                {isEditing ? "Update project details" : "Create a new project for the club"}
+              <DialogDescription className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.15em] mt-2">
+                {isEditing ? "Adjusting mission parameters for project deployment" : "Defining new venture parameters for club R&D pipeline"}
               </DialogDescription>
             </DialogHeader>
             
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Title</label>
+            <form onSubmit={handleSubmit} className="space-y-8">
+              <div className="grid grid-cols-2 gap-8">
+                <div className="space-y-3">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Designation</label>
                   <Input
+                    className="bg-white/[0.03] border-white/10 rounded-xl h-14 text-sm font-medium focus:ring-1 focus:ring-white/20 transition-all px-5 placeholder:text-slate-700"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    placeholder="Project title"
+                    placeholder="Project identifier"
                     required
                   />
                 </div>
-                <div>
-                  <label className="text-sm font-medium">Status</label>
+                <div className="space-y-3">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Lifecycle State</label>
                   <Select
                     value={formData.status}
                     onValueChange={(value) => setFormData({ ...formData, status: value })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-white/[0.03] border-white/10 rounded-xl h-14 text-sm font-medium focus:ring-1 focus:ring-white/20 transition-all px-5">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="on-hold">On Hold</SelectItem>
+                    <SelectContent className="bg-black border-white/10 rounded-xl">
+                      <SelectItem value="active" className="text-sm">Active Deployment</SelectItem>
+                      <SelectItem value="completed" className="text-sm">Manifest Completed</SelectItem>
+                      <SelectItem value="on-hold" className="text-sm">Protocol On-Hold</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
               
-              <div>
-                <label className="text-sm font-medium">Description</label>
+              <div className="space-y-3">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Mission briefing</label>
                 <Textarea
+                  className="bg-white/[0.03] border-white/10 rounded-2xl min-h-[140px] text-sm font-medium focus:ring-1 focus:ring-white/20 transition-all p-5 placeholder:text-slate-700"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Project description"
+                  placeholder="Full scope and objectives of the venture"
                   required
                 />
               </div>
               
-              <div>
-                <label className="text-sm font-medium">Technologies (comma-separated)</label>
+              <div className="space-y-3">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Tech Stack Architecture (comma-separated)</label>
                 <Input
+                  className="bg-white/[0.03] border-white/10 rounded-xl h-14 text-sm font-medium focus:ring-1 focus:ring-white/20 transition-all px-5 placeholder:text-slate-700"
                   value={formData.technologies}
                   onChange={(e) => setFormData({ ...formData, technologies: e.target.value })}
-                  placeholder="React, TypeScript, Node.js"
+                  placeholder="React, Primordial-AI, Neural-Core..."
                 />
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">GitHub URL</label>
+              <div className="grid grid-cols-2 gap-8">
+                <div className="space-y-3">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Source Repository</label>
                   <Input
+                    className="bg-white/[0.03] border-white/10 rounded-xl h-14 text-sm font-medium focus:ring-1 focus:ring-white/20 transition-all px-5 placeholder:text-slate-700"
                     value={formData.github_url}
                     onChange={(e) => setFormData({ ...formData, github_url: e.target.value })}
-                    placeholder="https://github.com/..."
+                    placeholder="https://github.com/source..."
                     type="url"
                   />
                 </div>
-                <div>
-                  <label className="text-sm font-medium">Live URL</label>
+                <div className="space-y-3">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Deployment Endpoint</label>
                   <Input
+                    className="bg-white/[0.03] border-white/10 rounded-xl h-14 text-sm font-medium focus:ring-1 focus:ring-white/20 transition-all px-5 placeholder:text-slate-700"
                     value={formData.live_url}
                     onChange={(e) => setFormData({ ...formData, live_url: e.target.value })}
-                    placeholder="https://..."
+                    placeholder="https://nexus.live..."
                     type="url"
                   />
                 </div>
               </div>
               
-              <div>
-                <label className="text-sm font-medium">Team Members (comma-separated)</label>
+              <div className="space-y-3">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Team Aggregation (comma-separated)</label>
                 <Input
+                  className="bg-white/[0.03] border-white/10 rounded-xl h-14 text-sm font-medium focus:ring-1 focus:ring-white/20 transition-all px-5 placeholder:text-slate-700"
                   value={formData.team_members}
                   onChange={(e) => setFormData({ ...formData, team_members: e.target.value })}
-                  placeholder="John Doe, Jane Smith"
+                  placeholder="Operator IDs/Names"
                 />
               </div>
               
               <ImageUpload
                 value={formData.image_url}
                 onChange={(url) => setFormData({ ...formData, image_url: url })}
-                label="Project Image"
-                placeholder="Enter image URL or upload a file"
+                label="Venture Interface Visual"
+                placeholder="Interface snapshot URL or upload"
               />
               
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={handleCloseDialog}>
-                  Cancel
+              <div className="flex justify-end gap-4 pt-10 border-t border-white/5">
+                <Button type="button" variant="ghost" className="text-[11px] font-bold uppercase tracking-[0.1em] h-12 px-8 text-slate-500 hover:text-white hover:bg-white/5 rounded-xl transition-all" onClick={handleCloseDialog}>
+                  Terminate
                 </Button>
-                <Button type="submit" disabled={submitting}>
+                <Button type="submit" disabled={submitting} className="bg-white text-black font-bold text-[11px] uppercase tracking-[0.1em] rounded-xl h-12 px-10 hover:bg-slate-200 shadow-lg transition-all">
                   {submitting ? (
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
                   ) : (
                     <Plus className="h-4 w-4 mr-2" />
                   )}
-                  {isEditing ? "Update Project" : "Create Project"}
+                  {isEditing ? "Update Venture" : "Initialize Manifest"}
                 </Button>
               </div>
             </form>
@@ -439,115 +445,107 @@ export default function AdminProjectManager() {
       </div>
 
       {error && (
-        <Alert>
-          <AlertDescription>{error}</AlertDescription>
+        <Alert className="bg-red-500/5 border-red-500/10 rounded-2xl border-l-4 border-l-red-500">
+          <AlertDescription className="text-[11px] font-bold uppercase tracking-widest text-red-500">Critical Error: {error}</AlertDescription>
         </Alert>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Projects ({projects.length})</CardTitle>
-          <CardDescription>All club projects</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {projects.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No projects found
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Technologies</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Team</TableHead>
-                  <TableHead>Links</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {projects && projects.length > 0 ? projects.map((project) => (
-                  <TableRow key={project.id}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{project.title}</div>
-                        <div className="text-sm text-muted-foreground line-clamp-2">
-                          {project.description}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {project.technologies.slice(0, 3).map((tech, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            {tech}
-                          </Badge>
-                        ))}
-                        {project.technologies.length > 3 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{project.technologies.length - 3}
-                          </Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getProjectStatusColor(project.status)}>
-                        {project.status}
+      <div className="bg-[#0a0a0a]/40 backdrop-blur-xl border border-white/5 rounded-[2.5rem] overflow-hidden shadow-3xl">
+        <Table>
+          <TableHeader className="bg-white/[0.02]">
+            <TableRow className="border-white/5 hover:bg-transparent">
+              <TableHead className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 h-20 px-10">Venture Payload</TableHead>
+              <TableHead className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 h-20">Architecture</TableHead>
+              <TableHead className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 h-20">Lifecycle</TableHead>
+              <TableHead className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 h-20">Personnel</TableHead>
+              <TableHead className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 h-20">Interfaces</TableHead>
+              <TableHead className="text-right text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 h-20 px-10">Tactical</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {projects && projects.length > 0 ? projects.map((project) => (
+              <TableRow key={project.id} className="border-white/5 hover:bg-white/[0.03] transition-all group h-28">
+                <TableCell className="px-10">
+                  <div>
+                    <h4 className="font-bold text-slate-100 text-base font-outfit tracking-tight">{project.title}</h4>
+                    <p className="text-[11px] text-slate-500 mt-1.5 max-w-md line-clamp-1 font-medium leading-relaxed">
+                      {project.description}
+                    </p>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex flex-wrap gap-1.5">
+                    {project.technologies.slice(0, 3).map((tech, index) => (
+                      <Badge key={index} variant="outline" className="text-[9px] font-bold uppercase tracking-[0.1em] bg-white/5 border-white/10 rounded-lg px-2.5 py-0.5">
+                        {tech}
                       </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        {project.team_members.slice(0, 2).join(', ')}
-                        {project.team_members.length > 2 && ` +${project.team_members.length - 2}`}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {project.github_url && (
-                          <Button variant="outline" size="sm" asChild>
-                            <a href={project.github_url} target="_blank" rel="noopener noreferrer">
-                              <Github className="h-4 w-4" />
-                            </a>
-                          </Button>
-                        )}
-                        {project.live_url && (
-                          <Button variant="outline" size="sm" asChild>
-                            <a href={project.live_url} target="_blank" rel="noopener noreferrer">
-                              <ExternalLink className="h-4 w-4" />
-                            </a>
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleViewApplications(project)}
-                        >
-                          <Users className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleEdit(project)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                )) : null}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+                    ))}
+                    {project.technologies.length > 3 && (
+                      <Badge variant="outline" className="text-[9px] font-bold uppercase tracking-[0.1em] bg-white/5 border-white/10 rounded-lg px-2.5 py-0.5">
+                        +{project.technologies.length - 3}
+                      </Badge>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Badge className={`${getProjectStatusColor(project.status).replace('bg-green-100 text-green-800', 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20')} border-[0.5px] text-[10px] font-bold uppercase tracking-[0.1em] px-3 py-1 rounded-lg`}>
+                    {project.status}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-sm font-bold text-slate-300 font-outfit">
+                      {project.team_members.slice(0, 2).join(', ')}
+                    </span>
+                    <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-slate-600">
+                      {project.team_members.length > 2 ? `+ ${project.team_members.length - 2} OPERATORS` : 'OPERATORS'}
+                    </span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    {project.github_url && (
+                      <Button variant="ghost" size="sm" className="size-10 p-0 rounded-xl bg-white/5 border border-white/5 hover:bg-white hover:text-black transition-all duration-300" asChild>
+                        <a href={project.github_url} target="_blank" rel="noopener noreferrer">
+                          <Github className="h-4.5 w-4.5" />
+                        </a>
+                      </Button>
+                    )}
+                    {project.live_url && (
+                      <Button variant="ghost" size="sm" className="size-10 p-0 rounded-xl bg-white/5 border border-white/5 hover:bg-white hover:text-black transition-all duration-300" asChild>
+                        <a href={project.live_url} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="h-4.5 w-4.5" />
+                        </a>
+                      </Button>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell className="px-10 text-right">
+                  <div className="flex items-center justify-end gap-3">
+                    <Button 
+                      variant="ghost" 
+                      className="size-11 p-0 rounded-2xl bg-white/5 border border-white/5 hover:border-white/20 hover:bg-white hover:text-black transition-all duration-300"
+                      onClick={() => handleViewApplications(project)}
+                    >
+                      <Users className="size-4.5" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      className="size-11 p-0 rounded-2xl bg-white/5 border border-white/5 hover:border-white/20 hover:bg-white hover:text-black transition-all duration-300"
+                      onClick={() => handleEdit(project)}
+                    >
+                      <Edit className="size-4.5" />
+                    </Button>
+                    <Button variant="ghost" className="size-11 p-0 rounded-2xl bg-red-500/5 border border-red-500/10 hover:bg-red-500 hover:text-white text-red-500 transition-all duration-300">
+                      <Trash2 className="size-4.5" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            )) : null}
+          </TableBody>
+        </Table>
+      </div>
 
       {/* Applications Dialog */}
       <Dialog open={isApplicationsDialogOpen} onOpenChange={setIsApplicationsDialogOpen}>
@@ -672,4 +670,5 @@ export default function AdminProjectManager() {
       </Dialog>
     </div>
   )
-} 
+}
+ 

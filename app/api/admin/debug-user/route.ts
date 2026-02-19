@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
       .from('users')
       .select('*')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
 
     return NextResponse.json({
       currentUser: {

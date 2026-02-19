@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
       .from('users')
       .select('*')
       .eq('id', 'c6077857-5638-43af-81b1-ddb4954cb4fa')
-      .single()
+      .maybeSingle()
 
     return NextResponse.json({
       usersTableExists: !usersError,

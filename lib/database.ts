@@ -1,44 +1,24 @@
 import { supabase, TeamMember, Event, Project, Resource, MembershipApplication } from './supabase'
 import { validateEmailDomain, getEmailDomainError } from './auth'
 
-// Debug: Check Supabase configuration on module load
-console.log('=== Database Module Debug ===')
-console.log('Supabase client exists:', !!supabase)
-console.log('Supabase URL configured:', !!process.env.NEXT_PUBLIC_SUPABASE_URL)
-console.log('Supabase Key configured:', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
-console.log('Environment variables:', {
-  hasUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-  hasKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  urlLength: process.env.NEXT_PUBLIC_SUPABASE_URL?.length || 0,
-  keyLength: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.length || 0
-})
-
-// Test Supabase connection
-async function testSupabaseConnection() {
-  try {
-    console.log('Testing Supabase connection...')
-    const { data, error } = await supabase.from('events').select('count').limit(1)
-    console.log('Connection test result:', { data, error })
-    return !error
-  } catch (err) {
-    console.error('Connection test failed:', err)
-    return false
-  }
-}
-
 // Team Members
 export async function getTeamMembers(): Promise<TeamMember[]> {
-  const { data, error } = await supabase
-    .from('team_members')
-    .select('*')
-    .order('created_at', { ascending: true })
+  try {
+    const { data, error } = await supabase
+      .from('team_members')
+      .select('*')
+      .order('created_at', { ascending: true })
 
-  if (error) {
-    console.error('Error fetching team members:', error)
+    if (error) {
+      console.warn('Error fetching team members:', error)
+      return []
+    }
+
+    return data || []
+  } catch (err) {
+    console.warn('Unexpected error in getTeamMembers:', err)
     return []
   }
-
-  return data || []
 }
 
 // Alias for compatibility
@@ -46,39 +26,27 @@ export const fetchTeamMembers = getTeamMembers
 
 // Milestones
 export async function fetchMilestones(): Promise<any[]> {
-  const { data, error } = await supabase
-    .from('milestones')
-    .select('*')
-    .order('year', { ascending: true })
+  try {
+    const { data, error } = await supabase
+      .from('milestones')
+      .select('*')
+      .order('year', { ascending: true })
 
-  if (error) {
-    console.error('Error fetching milestones:', error)
+    if (error) {
+      console.warn('Error fetching milestones:', error)
+      return []
+    }
+
+    return data || []
+  } catch (err) {
+    console.warn('Unexpected error in fetchMilestones:', err)
     return []
   }
-
-  return data || []
 }
 
 // Events
 export async function getUpcomingEvents(): Promise<Event[]> {
   try {
-    // Debug: Check if Supabase client is properly configured
-    if (!supabase) {
-      console.error('Supabase client is not initialized')
-      return []
-    }
-
-    // Test connection first
-    const connectionOk = await testSupabaseConnection()
-    if (!connectionOk) {
-      console.error('Supabase connection test failed')
-      return []
-    }
-
-    // Debug: Log the environment variables (without exposing sensitive data)
-    console.log('Supabase URL configured:', !!process.env.NEXT_PUBLIC_SUPABASE_URL)
-    console.log('Supabase Key configured:', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
-
     const { data, error } = await supabase
       .from('events')
       .select('*')
@@ -87,90 +55,46 @@ export async function getUpcomingEvents(): Promise<Event[]> {
       .limit(4)
 
     if (error) {
-      console.error('Error fetching events:', error)
-      console.error('Error details:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code
-      })
-      // Check if it's a table doesn't exist error
-      if (error.message && error.message.includes('relation "events" does not exist')) {
-        console.error('Events table does not exist. Please run the database setup script.')
-      }
+      console.warn('Error fetching events:', error)
       return []
     }
 
-    console.log('Successfully fetched events:', data?.length || 0, 'events')
     return data || []
   } catch (err) {
-    console.error('Unexpected error in getUpcomingEvents:', err)
+    console.warn('Unexpected error in getUpcomingEvents:', err)
     return []
   }
 }
 
 export async function getAllEvents(): Promise<Event[]> {
   try {
-    console.log('Fetching all events from database...')
-    
-    // Check if Supabase client is properly configured
-    if (!supabase) {
-      console.error('Supabase client is not initialized')
-      return []
-    }
-
-    // Test connection first
-    const connectionOk = await testSupabaseConnection()
-    if (!connectionOk) {
-      console.error('Supabase connection test failed')
-      return []
-    }
-
     const { data, error } = await supabase
       .from('events')
       .select('*')
       .order('date', { ascending: false })
 
     if (error) {
-      console.error('Error fetching all events:', error)
-      // Check if it's a table doesn't exist error
-      if (error.message && error.message.includes('relation "events" does not exist')) {
-        console.error('Events table does not exist. Please run the database setup script.')
-      }
+      console.warn('Error fetching all events:', error)
       return []
     }
 
-    console.log(`Successfully fetched ${data?.length || 0} events`)
-    console.log('Raw event data from database:', data?.[0])
-    
     // Map database fields to expected interface
-    const mappedEvents = (data || []).map(event => {
-      const mapped = {
-        ...event,
-        // Ensure required fields exist and map database fields correctly
-        date: event.date || event.start_date || new Date().toISOString(),
-        time: event.time || event.start_time || '',
-        type: event.type || event.event_type || 'General',
-        isOnline: event.isOnline || event.is_online || false,
-        capacity: event.capacity || event.max_attendees || 0,
-        registered: event.registered || event.current_attendees || 0,
-        tags: event.tags || [event.type || event.event_type || 'General'],
-        host: event.host || 'TechClub',
-        image_url: event.image_url || event.image || ''
-      }
-      
-      console.log(`Mapped event "${event.title}":`, {
-        original: event,
-        mapped: mapped,
-        is_featured: event.is_featured
-      })
-      
-      return mapped
-    })
+    const mappedEvents = (data || []).map(event => ({
+      ...event,
+      date: event.date || event.start_date || new Date().toISOString(),
+      time: event.time || event.start_time || '',
+      type: event.type || event.event_type || 'General',
+      isOnline: event.isOnline || event.is_online || false,
+      capacity: event.capacity || event.max_attendees || 0,
+      registered: event.registered || event.current_attendees || 0,
+      tags: event.tags || [event.type || event.event_type || 'General'],
+      host: event.host || 'TechClub',
+      image_url: event.image_url || event.image || ''
+    }))
 
     return mappedEvents
   } catch (err) {
-    console.error('Unexpected error in getAllEvents:', err)
+    console.warn('Unexpected error in getAllEvents:', err)
     return []
   }
 }
@@ -178,19 +102,6 @@ export async function getAllEvents(): Promise<Event[]> {
 // Featured Event
 export async function getFeaturedEvent(): Promise<Event | null> {
   try {
-    // Debug: Check if Supabase client is properly configured
-    if (!supabase) {
-      console.error('Supabase client is not initialized')
-      return null
-    }
-
-    // Test connection first
-    const connectionOk = await testSupabaseConnection()
-    if (!connectionOk) {
-      console.error('Supabase connection test failed')
-      return null
-    }
-
     const { data, error } = await supabase
       .from('events')
       .select('*')
@@ -201,86 +112,98 @@ export async function getFeaturedEvent(): Promise<Event | null> {
       .single()
 
     if (error) {
-      console.error('Error fetching featured event:', error)
-      console.error('Error details:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code
-      })
-      // Check if it's a table doesn't exist error
-      if (error.message && error.message.includes('relation "events" does not exist')) {
-        console.error('Events table does not exist. Please run the database setup script.')
+      // PGRST116 = no rows found, which is expected when no featured event exists
+      if (error.code !== 'PGRST116') {
+        console.warn('Error fetching featured event:', error)
       }
       return null
     }
 
-    console.log('Successfully fetched featured event:', data ? 'found' : 'not found')
     return data
   } catch (err) {
-    console.error('Unexpected error in getFeaturedEvent:', err)
+    console.warn('Unexpected error in getFeaturedEvent:', err)
     return null
   }
 }
 
 // Projects
 export async function getProjectsByCategory(category: string): Promise<Project[]> {
-  const { data, error } = await supabase
-    .from('projects')
-    .select('*')
-    .eq('category', category)
-    .order('created_at', { ascending: false })
+  try {
+    const { data, error } = await supabase
+      .from('projects')
+      .select('*')
+      .eq('category', category)
+      .order('created_at', { ascending: false })
 
-  if (error) {
-    console.error('Error fetching projects:', error)
+    if (error) {
+      console.warn('Error fetching projects:', error)
+      return []
+    }
+
+    return data || []
+  } catch (err) {
+    console.warn('Unexpected error in getProjectsByCategory:', err)
     return []
   }
-
-  return data || []
 }
 
 export async function getAllProjects(): Promise<Project[]> {
-  const { data, error } = await supabase
-    .from('projects')
-    .select('*')
-    .order('created_at', { ascending: false })
+  try {
+    const { data, error } = await supabase
+      .from('projects')
+      .select('*')
+      .order('created_at', { ascending: false })
 
-  if (error) {
-    console.error('Error fetching all projects:', error)
+    if (error) {
+      console.warn('Error fetching all projects:', error)
+      return []
+    }
+
+    return data || []
+  } catch (err) {
+    console.warn('Unexpected error in getAllProjects:', err)
     return []
   }
-
-  return data || []
 }
 
 // Resources
 export async function getResourcesByCategory(category: string): Promise<Resource[]> {
-  const { data, error } = await supabase
-    .from('resources')
-    .select('*')
-    .eq('category', category)
-    .order('created_at', { ascending: false })
+  try {
+    const { data, error } = await supabase
+      .from('resources')
+      .select('*')
+      .eq('category', category)
+      .order('created_at', { ascending: false })
 
-  if (error) {
-    console.error('Error fetching resources:', error)
+    if (error) {
+      console.warn('Error fetching resources:', error)
+      return []
+    }
+
+    return data || []
+  } catch (err) {
+    console.warn('Unexpected error in getResourcesByCategory:', err)
     return []
   }
-
-  return data || []
 }
 
 export async function getAllResources(): Promise<Resource[]> {
-  const { data, error } = await supabase
-    .from('resources')
-    .select('*')
-    .order('created_at', { ascending: false })
+  try {
+    const { data, error } = await supabase
+      .from('resources')
+      .select('*')
+      .order('created_at', { ascending: false })
 
-  if (error) {
-    console.error('Error fetching all resources:', error)
+    if (error) {
+      console.warn('Error fetching all resources:', error)
+      return []
+    }
+
+    return data || []
+  } catch (err) {
+    console.warn('Unexpected error in getAllResources:', err)
     return []
   }
-
-  return data || []
 }
 
 // Membership Applications

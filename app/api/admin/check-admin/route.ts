@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
       .from('users')
       .select('*')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
 
     if (userError || !userData) {
       // User doesn't exist in our table, create them
