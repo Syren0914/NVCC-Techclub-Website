@@ -328,7 +328,7 @@ export default function ClubHomePage() {
         <section className="w-full pt-44 pb-20 md:pt-52 md:pb-32 lg:pt-48 lg:pb-10 overflow-hidden relative">
           {/* LightRays Background - Full Coverage */}
           <div className="absolute inset-0 -z-20 pointer-events-none" style={{ minHeight: '100vh' }}>
-            <LightRays
+            {/* <LightRays
               raysOrigin="top-center"
               raysColor="#00ffff"
               raysSpeed={1.5}
@@ -340,7 +340,7 @@ export default function ClubHomePage() {
               distortion={0.05}
               className="w-full h-full"
               zIndex="-z-10"
-            />
+            /> */}
             {/* Debug Info */}
             <div className="absolute top-4 left-4 text-white bg-black p-2 rounded text-xs z-10">
               LightRays Container - Should be visible
